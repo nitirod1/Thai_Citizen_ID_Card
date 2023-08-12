@@ -29,23 +29,24 @@ store critical field on off chain by hash
 database (off chain)
 - postgress 
 	- field 
-	- 1. Full Name
-	- 2. Age
-	- 3. Gender
-	- 4. Citizen ID
-  	- 5. Issue Date
-	- 6. Expiry Date
-	- 7. Hash for off chain
+		- 1. Full Name
+		- 2. Age
+		- 3. Gender
+		- 4. Citizen ID
+	  	- 5. Issue Date
+		- 6. Expiry Date
+		- 7. Hash for off chain
 
 IPFS
 - pinata provide public uri
 	- metadata 
-	- 1. image id card 
-	- 2. token id
-	- 3. property
+		- 1. image id card 
+		- 2. token id
+		- 3. property
 
 backend 
-- 1. golang for api to database 
+- 1. golang for api to database
+- 2. asyn queue (optional)
 	
 frontend 
 - 1. next.js 
