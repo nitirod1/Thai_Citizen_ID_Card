@@ -45,11 +45,11 @@ IPFS
 	- 3. property
 
 backend 
-	- 1. golang for api to database 
+- 1. golang for api to database 
 	
 frontend 
-	- 1. next.js 
-	- 2. ether.js for connect smart contract
+- 1. next.js 
+- 2. ether.js for connect smart contract
 
 smart contract 
 - on chain
