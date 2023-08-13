@@ -55,5 +55,6 @@ frontend
 smart contract 
 - on chain
 	- 1. core contract
-
+- upgrade contract
+	- 1. UpgradeableProxy
 	
