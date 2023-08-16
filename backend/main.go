@@ -14,6 +14,7 @@ type User struct {
 	gorm.Model
 	TokenId uint   `gorm:"column:token_id"`
 	Key     string `gorm:"column:key"`
+	Wallet  string `gorm:"column:wallet"`
 }
 
 func main() {
@@ -49,6 +50,7 @@ func main() {
 		user := &User{
 			TokenId: userReq.TokenId,
 			Key:     userReq.Key,
+			Wallet:  userReq.Wallet,
 		}
 		result := db.Create(&user)
 		if result.Error != nil {
@@ -59,10 +61,10 @@ func main() {
 		c.JSON(200, userReq)
 	})
 
-	r.GET("/users/:tokenId", func(c *gin.Context) {
+	r.GET("/users/:wallet", func(c *gin.Context) {
 		var user User
-		tokenId := c.Param("tokenId")
-		result := db.Where("token_id = ?", tokenId).First(&user)
+		wallet := c.Param("wallet")
+		result := db.Where("wallet = ?", wallet).First(&user)
 		if result.Error != nil {
 			c.JSON(404, gin.H{"error": "User not found"})
 			return
