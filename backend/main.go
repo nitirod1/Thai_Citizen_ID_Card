@@ -3,15 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
+	"tdic/model"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	TokenId uint
-	Key     string
+	TokenId uint   `gorm:"column:token_id"`
+	Key     string `gorm:"column:key"`
 }
 
 func main() {
@@ -34,4 +36,44 @@ func main() {
 	}
 
 	fmt.Println("Connection to database established.")
+
+	r := gin.Default()
+
+	r.POST("/users", func(c *gin.Context) {
+		var userReq model.UserRequest
+		if err := c.ShouldBindJSON(&userReq); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		user := &User{
+			TokenId: userReq.TokenId,
+			Key:     userReq.Key,
+		}
+		result := db.Create(&user)
+		if result.Error != nil {
+			c.JSON(500, gin.H{"error": result.Error.Error()})
+			return
+		}
+
+		c.JSON(200, userReq)
+	})
+
+	r.GET("/users/:tokenId", func(c *gin.Context) {
+		var user User
+		tokenId := c.Param("tokenId")
+		result := db.Where("token_id = ?", tokenId).First(&user)
+		if result.Error != nil {
+			c.JSON(404, gin.H{"error": "User not found"})
+			return
+		}
+
+		response := &model.UserResponse{
+			TokenId: user.TokenId,
+			Key:     user.Key,
+		}
+		c.JSON(200, response)
+	})
+
+	r.Run(":8080") // Run the server on port 8080
 }
