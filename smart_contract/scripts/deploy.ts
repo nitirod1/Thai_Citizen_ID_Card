@@ -1,22 +1,16 @@
 import { ethers } from "hardhat";
-
+import "dotenv/config";
+const { SEPOLIA_RPC, PRIVATE_KEY, ETHERSCAN_API } = process.env;
 async function main() {
-  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  // const unlockTime = currentTimestampInSeconds + 60;
+  // // const lockedAmount = ethers.utils.parseEther("0.001");
+  const ThaiCitizenContract = await ethers.getContractFactory("ThaiCitizenIdCardToken"); 
+  const ThaiCitizenDeploymend = await ThaiCitizenContract.deploy();
 
-  // const lockedAmount = ethers.utils.parseEther("0.001");
-  // const LockContract = await ethers.getContractFactory("Lock"); 
-  // const lock = await LockContract.deploy(unlockTime, {
-  //   value: lockedAmount,
-  // });
+  await ThaiCitizenDeploymend.waitForDeployment();
 
-  // await lock.waitForDeployment();
-
-  // console.log(
-  //   `Lock with ${ethers.utils.formatEther(
-  //     lockedAmount
-  //   )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  // );
+  console.log(
+    `ThaiCitizen deployed to ${await ThaiCitizenDeploymend.getAddress()}`
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere
