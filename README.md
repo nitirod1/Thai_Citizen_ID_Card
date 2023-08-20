@@ -4,10 +4,6 @@ store critical field on off chain by hash
 
 database
 - postgress 
-	- field 
-		-  token id
- 		-  key
-
 - IPFS
 - Pinata for provide public IPFS
   
