@@ -11,13 +11,12 @@ backend
 -  Golang for api to database
 	
 frontend 
--  Next.js 
+-  Next.js (TypeScript)
 -  Ether.js for connect smart contract
 -  Wagmi
 
 smart contract 
 - Alchemy deploy 
-- on chain
-   - token contract
-- upgrade contract
+- token contract (Solidity)
+- upgrade contract (Solidity)
 	
