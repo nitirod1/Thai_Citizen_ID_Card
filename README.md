@@ -2,26 +2,26 @@
 note ***
 store critical field on off chain by hash 
 
-database (off chain)
+database
 - postgress 
 	- field 
 		-  token id
  		-  key
 
-- store encrypdata on chain
+- IPFS
+- Pinata for provide public IPFS
   
 backend 
--  golang for api to database
--  queue (optional)
+-  Golang for api to database
 	
 frontend 
--  next.js 
--  ether.js for connect smart contract
+-  Next.js 
+-  Ether.js for connect smart contract
+-  Wagmi
 
 smart contract 
+- Alchemy deploy 
 - on chain
- - core contract
    - token contract
 - upgrade contract
- -  UpgradeableProxy
 	
