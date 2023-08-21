@@ -1,15 +1,14 @@
-import { ethers } from "hardhat";
-import "dotenv/config";
-const { SEPOLIA_RPC, PRIVATE_KEY, ETHERSCAN_API } = process.env;
+import { ethers,upgrades } from "hardhat";
+
 async function main() {
   // // const lockedAmount = ethers.utils.parseEther("0.001");
   const ThaiCitizenContract = await ethers.getContractFactory("ThaiCitizenIdCardToken"); 
-  const ThaiCitizenDeploymend = await ThaiCitizenContract.deploy();
-
-  await ThaiCitizenDeploymend.waitForDeployment();
+  // const ThaiCitizenDeploymend = await ThaiCitizenContract.deploy();
+  const thaiCitizenContract = await upgrades.deployProxy(ThaiCitizenContract);
+  await thaiCitizenContract.waitForDeployment();
 
   console.log(
-    `ThaiCitizen deployed to ${await ThaiCitizenDeploymend.getAddress()}`
+    `ThaiCitizen deployed to ${await thaiCitizenContract.getAddress()}`
   );
 }
 

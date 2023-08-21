@@ -11,4 +11,4 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
-testnet sepolia contract url https://sepolia.etherscan.io/address/0x6494D513a5145ACEA6a37D7d7624e1DD35534106#code
+testnet sepolia contract url https://sepolia.etherscan.io/address/0xf00E350FA96f3bBD935b2182a9E3cE6689bC4559#code

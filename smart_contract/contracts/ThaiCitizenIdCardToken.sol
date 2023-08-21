@@ -1,49 +1,66 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 
-contract ThaiCitizenIdCardToken is ERC721, ERC721URIStorage, Pausable, AccessControl, ERC721Burnable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIdCounter;
+contract ThaiCitizenIdCardToken is Initializable, ERC721Upgradeable, PausableUpgradeable, AccessControlUpgradeable, ERC721BurnableUpgradeable, UUPSUpgradeable ,ERC721URIStorageUpgradeable{
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _tokenIdCounter;
+
     bytes32 public constant SUB_OWNER_ROLE = keccak256("SUB_OWNER_ROLE");
     bytes32 public constant CITIZEN_ROLE = keccak256("CITIZEN_ROLE");
 
     struct Citizen {
-        bytes32 citizenIdHash;
-        bytes32 fullNameHash;
-        bytes32 ageHash;
-        bytes32 genderHash;
+        string encrypData;
         string issueDate;
         string expiryDate;
     }
     // Mapping to store secure attributes for each tokenId
-    mapping(uint256 => Citizen) public citizens;
+    mapping(uint256 => Citizen) private citizens;
+    mapping(address => uint256) public tokenOwner;
 
-    constructor() ERC721("Thai Citizen ID Card", "TDIC") {
+    event mintToken(uint256 tokenId, address to);
+
+    function initialize() public initializer {
+        __ERC721_init("Thai Citizen ID Card", "TDIC");
+        __Pausable_init();
+        __AccessControl_init();
+        __ERC721Burnable_init();
+        __UUPSUpgradeable_init();
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(SUB_OWNER_ROLE, msg.sender);
     }
 
-    modifier newRoleCitizen(){
+    constructor() {
+       
+    }
+
+    modifier allowView(address _acount) {
         require(
-            !hasRole(CITIZEN_ROLE, msg.sender),
+            hasRole(SUB_OWNER_ROLE, _acount) ||
+                hasRole(DEFAULT_ADMIN_ROLE, _acount),
             "You already citizen role"
         );
         _;
     }
 
-    modifier onlyAllowedRoles(uint256 _tokenId) {
-        require(
-            hasRole(SUB_OWNER_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender)||  ownerOf(_tokenId) == msg.sender,
-            "Only allowed roles can access this"
-        );
+    modifier newRoleCitizen(address _to) {
+        require(!hasRole(CITIZEN_ROLE, _to), "You already citizen role");
         _;
+    }
+
+    function isTokenOwner(
+        uint256 tokenId,
+        address account
+    ) internal view returns (bool) {
+        return _ownerOf(tokenId) == account; // fixed
     }
 
     function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -54,99 +71,92 @@ contract ThaiCitizenIdCardToken is ERC721, ERC721URIStorage, Pausable, AccessCon
         _unpause();
     }
 
-    function safeMint(address to,
-        bytes32 _citizenIdHash,
-        bytes32 _fullNameHash,
-        bytes32 _ageHash,
-        bytes32 _genderHash,
+    function getOwnToken() public view returns (uint256) {
+        return tokenOwner[msg.sender];
+    }
+
+    function safeMint(
+        address _to,
+        string memory _encrypData,
         string memory _issueDate,
         string memory _expiryDate,
-        string memory uri) public newRoleCitizen(){
+        string memory uri
+    ) public newRoleCitizen(_to) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
+        _safeMint(_to, tokenId);
         _setTokenURI(tokenId, uri);
+        tokenOwner[msg.sender] = tokenId;
         // Store the secure attributes
-        citizens[tokenId] = Citizen(
-            _citizenIdHash,
-            _fullNameHash,
-            _ageHash,
-            _genderHash,
-            _issueDate,
-            _expiryDate
-        );
+        citizens[tokenId] = Citizen(_encrypData, _issueDate, _expiryDate);
         _grantRole(CITIZEN_ROLE, msg.sender);
+        emit mintToken(tokenId, _to);
     }
 
-    function updateMetadataURI(uint256 _tokenId,
-        bytes32 _citizenIdHash,
-        bytes32 _fullNameHash,
-        bytes32 _ageHash,
-        bytes32 _genderHash,
+    function update(
+        uint256 _tokenId,
+        string memory _encrypData,
         string memory _issueDate,
-        string memory _expiryDate, string memory newMetadataURI)
-        public
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        whenNotPaused
-    {
+        string memory _expiryDate
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) whenNotPaused {
         // Store the secure attributes
-        citizens[_tokenId] = Citizen(
-            _citizenIdHash,
-            _fullNameHash,
-            _ageHash,
-            _genderHash,
-            _issueDate,
-            _expiryDate
-        );
-        _setTokenURI(_tokenId, newMetadataURI);
+        citizens[_tokenId] = Citizen(_encrypData, _issueDate, _expiryDate);
     }
 
-     // Function to retrieve secure attributes for a tokenId
-    function getCitizen(uint256 _tokenId)
-        public
-        view 
-        onlyAllowedRoles(_tokenId) 
-        returns (
-            bytes32,
-            bytes32,
-            bytes32,
-            bytes32,
-            string memory,
-            string memory
-        )
-    {
-        Citizen memory citizen = citizens[_tokenId];
-        return (
-            citizen.citizenIdHash,
-            citizen.fullNameHash,
-            citizen.ageHash,
-            citizen.genderHash,
-            citizen.issueDate,
-            citizen.expiryDate
-        );
+    // Function to retrieve secure attributes for a tokenId
+    function getCitizenParty(
+        uint256 _tokenId
+    ) public view allowView(msg.sender) returns (Citizen memory) {
+        return (citizens[_tokenId]);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal virtual override {
+    function getCitizen(
+        uint256 _tokenId
+    ) public view returns (string memory, string memory, string memory) {
+        require(_ownerOf(_tokenId) == msg.sender);
+        string memory encrypData = citizens[_tokenId].encrypData;
+        string memory expiryDate = citizens[_tokenId].expiryDate;
+        string memory issueDate = citizens[_tokenId].issueDate;
+        return (encrypData, expiryDate, issueDate);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal virtual override {
         super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
-        require(from == address(0) || to == address(0), "This a Soulbound token. It cannot be transferred. It can only be burned by the token owner.");
+        require(
+            from == address(0) || to == address(0),
+            "This a Soulbound token. It cannot be transferred."
+        );
     }
 
     // The following functions are overrides required by Solidity.
     // the onlyRole DEFAULT_ADMIN_ROLE burn token
-    function removeToken(uint256 _tokenId) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function removeToken(uint256 _tokenId) public onlyRole(DEFAULT_ADMIN_ROLE) {
         delete citizens[_tokenId];
+        delete tokenOwner[msg.sender];
         _revokeRole(CITIZEN_ROLE, ownerOf(_tokenId));
         _burn(_tokenId);
     }
 
-    function _burn(uint256 _tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(_tokenId);
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+
+   function _burn(uint256 tokenId)
+        internal
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+    {
+        super._burn(tokenId);
     }
 
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -155,7 +165,7 @@ contract ThaiCitizenIdCardToken is ERC721, ERC721URIStorage, Pausable, AccessCon
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721URIStorage, AccessControl)
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
